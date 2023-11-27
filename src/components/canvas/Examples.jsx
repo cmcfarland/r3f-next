@@ -2,67 +2,27 @@
 
 import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import * as THREE from 'three'
-import { useMemo, useRef, useState } from 'react'
-import { Line, Plane, useCursor, MeshDistortMaterial } from '@react-three/drei'
-import { shaderMaterial } from '@react-three/drei'
+import { useRef, useState } from 'react'
+import { useCursor } from '@react-three/drei'
 import { useRouter } from 'next/navigation'
-import { extend, Canvas } from '@react-three/fiber'
-
-export const Blob = ({ route = '/', ...props }) => {
-  const router = useRouter()
-  const [hovered, hover] = useState(false)
-  useCursor(hovered)
-  return (
-    <mesh
-      onClick={() => router.push(route)}
-      onPointerOver={() => hover(true)}
-      onPointerOut={() => hover(false)}
-      {...props}>
-      <sphereGeometry args={[1, 64, 64]} />
-      <MeshDistortMaterial roughness={0} color={hovered ? 'hotpink' : '#1fb2f5'} />
-    </mesh>
-  )
-}
-
-export const Logo = ({ route = '/blob', ...props }) => {
-  const mesh = useRef(null)
-  const router = useRouter()
-
-  const [hovered, hover] = useState(false)
-  const points = useMemo(() => new THREE.EllipseCurve(0, 0, 3, 1.15, 0, 2 * Math.PI, false, 0).getPoints(100), [])
-
-  useCursor(hovered)
-  useFrame((state, delta) => {
-    const t = state.clock.getElapsedTime()
-    mesh.current.rotation.y = Math.sin(t) * (Math.PI / 8)
-    mesh.current.rotation.x = Math.cos(t) * (Math.PI / 8)
-    mesh.current.rotation.z -= delta / 2
-  })
-
-  return (
-    <group ref={mesh} {...props}>
-      {/* @ts-ignore */}
-      <Line worldUnits points={points} color='#b2b21f' lineWidth={0.05} />
-      {/* @ts-ignore */}
-      <Line worldUnits points={points} color='#1ff5b2' lineWidth={0.05} rotation={[0, 0, 1]} />
-      {/* @ts-ignore */}
-      <Line worldUnits points={points} color='#f51ff5' lineWidth={0.05} rotation={[0, 0, -1]} />
-      <mesh onClick={() => router.push(route)}
-        onPointerOver={() => hover(true)}
-        onPointerOut={() => hover(false)}>
-        <sphereGeometry args={[0.55, 64, 64]} />
-        <meshPhysicalMaterial roughness={0} color={hovered ? 'hotpink' : '#1fb2f5'} />
-      </mesh>
-    </group>
-  )
-}
+import { extend } from '@react-three/fiber'
+import { shaderMaterial } from '@react-three/drei'
+// import { Outlines } from '@react-three/drei'
+import { useControls } from 'leva'
+import dynamic from 'next/dynamic'
+const Outlines = dynamic(() => import('@react-three/drei').then((mod) => mod.Outlines), { ssr: false })
+// const useControls = dynamic(() => import('leva').then((mod) => mod.useControls), { ssr: false })
 
 // FFT plane visualizer
-export const Spectrum = ({ halfLength = 512, defaultColor = '#b2b21f', ...props }) => {
+export const Spectrum = ({ route = '/blob', halfLength = 512, ...props }) => {
+  const router = useRouter()
+  // const [hovered, hover] = useRef(false)
+  const [hovered, hover] = useState(false)
+  useCursor(hovered)
+
   // const halfLength = this.timeArray.length / 8;
   const ColorShiftMaterial = shaderMaterial(
-    { time: 0, color: defaultColor },
+    { time: 0, color: '#1fb2f5' },
     /* vertex shader, glsl*/`
       varying vec2 vUv;
       void main() {
@@ -82,7 +42,19 @@ export const Spectrum = ({ halfLength = 512, defaultColor = '#b2b21f', ...props 
     `,
   )
   extend({ ColorShiftMaterial })
-  const mesh = useRef()
+
+  const mesh = useRef(null)
+  const { wireframe } = useControls({ wireframe: false })
+  const { outlines, color, thickness, angle } = useControls({
+    outlines: true,
+    color: 'white',
+    thickness: { value: 0.5, step: 0.1, min: 0, max: 4 },
+    angle: { value: 0.0, step: 0.1, min: 0, max: Math.PI },
+  })
+  // const color = '#ffffff'
+  // const thickness = 1.0
+  // const outlines = true
+  // const wireframe = false
 
   useFrame((state, delta) => {
     const t = state.clock.getElapsedTime()
@@ -94,20 +66,12 @@ export const Spectrum = ({ halfLength = 512, defaultColor = '#b2b21f', ...props 
 
   return (
     // <Plane ref={mesh} args={[halfLength, halfLength]} color='#f51ff5' side={THREE.DoubleSide} {...props} />
-    <mesh ref={mesh}>
+    <mesh ref={mesh} {...props} castShadow receiveShadow>
+      <Outlines color={wireframe ? color : '#aaffaa'}
+        thickness={thickness} angle={angle}
+        transparent={!outlines} opacity={0} />
       <boxGeometry args={[50, 50, 50]} />
-      <meshBasicMaterial color={0xff0000} wireframe />
+      <meshBasicMaterial color={0xff0000} wireframe={wireframe} />
     </mesh>
   )
 }
-
-const Cube = () => {
-  const mesh = useRef();
-
-  return (
-    <mesh ref={mesh}>
-      <boxGeometry args={[100, 100, 100]} />
-      <meshBasicMaterial color={0xff0000} />
-    </mesh>
-  );
-};

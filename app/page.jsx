@@ -3,9 +3,8 @@
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
 
-const Logo = dynamic(() => import('@/components/canvas/Examples').then((mod) => mod.Logo), { ssr: false })
 const Spectrum = dynamic(() => import('@/components/canvas/Examples').then((mod) => mod.Spectrum), { ssr: false })
-const Cube = dynamic(() => import('@/components/canvas/Examples').then((mod) => mod.Cube), { ssr: false })
+const Logo = dynamic(() => import('@/components/canvas/Logo').then((mod) => mod.Logo), { ssr: false })
 
 const View = dynamic(() => import('@/components/canvas/View').then((mod) => mod.View), {
   ssr: false,
@@ -25,6 +24,7 @@ const View = dynamic(() => import('@/components/canvas/View').then((mod) => mod.
 const Common = dynamic(() => import('@/components/canvas/View').then((mod) => mod.Common), { ssr: false })
 
 export default function Page() {
+
   return (
     <>
       <div className='absolute left-0 top-0 h-full w-full flex-col flex-wrap items-center md:flex-row  lg:w-4/5'>
@@ -37,7 +37,7 @@ export default function Page() {
           <View orbit className='relative h-full w-full sm:h-full sm:w-full'>
             <Suspense fallback={null}>
               {/* <Cube /> */}
-              <Spectrum halfLength={100}
+              <Spectrum route='/blob' halfLength={100}
                 scale={0.7} position={[0, 1, 0]} rotation={[-Math.PI / 4, 0, 0]} />
               <Common posZ={150} />
             </Suspense>
@@ -55,7 +55,7 @@ export default function Page() {
 
         <div className='w-full text-center md:w-3/5'>
           <View className='flex h-48 w-48 flex-col items-center justify-center'>
-            <Suspense fallback={null}>
+            <Suspense >
               <Logo route='/blob' scale={0.6} position={[0, 0, 0]} />
               <Common light />
             </Suspense>

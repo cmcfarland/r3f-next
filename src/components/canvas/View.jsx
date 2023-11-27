@@ -4,8 +4,9 @@ import { forwardRef, Suspense, useImperativeHandle, useRef } from 'react'
 import { OrbitControls, PerspectiveCamera, View as ViewImpl } from '@react-three/drei'
 import { Three } from '@/helpers/components/Three'
 
-export const Common = ({ color = null, posZ = 6, light = true }) => (
-  <Suspense fallback={null}>
+export const Common = ({ color, posZ = 6, light }) => (
+  <Suspense >
+    {/* fallback={null} */}
     {color && <color attach='background' args={[color]} />}
 
     {light && <ambientLight intensity={0.5} />}
