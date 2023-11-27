@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 
 export const Blob = ({ route = '/', ...props }) => {
   const router = useRouter();
-  const [hovered, hover] = useState(false);
+  const [hovered, hover] = useState(() => { false });
   useCursor(hovered);
   return (
     <mesh

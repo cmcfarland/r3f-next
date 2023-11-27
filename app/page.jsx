@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
 
 const Spectrum = dynamic(() => import('@/components/canvas/Examples').then((mod) => mod.Spectrum), { ssr: false })
+const Cube = dynamic(() => import('@/components/canvas/Examples').then((mod) => mod.Cube), { ssr: false })
 const Logo = dynamic(() => import('@/components/canvas/Logo').then((mod) => mod.Logo), { ssr: false })
 
 const View = dynamic(() => import('@/components/canvas/View').then((mod) => mod.View), {
@@ -36,23 +37,16 @@ export default function Page() {
         <div className='relative h-full w-full sm:w-full md:mb-40'>
           <View orbit className='relative h-full w-full sm:h-full sm:w-full'>
             <Suspense fallback={null}>
-              {/* <Cube /> */}
+              <Cube />
               <Spectrum route='/blob' halfLength={100}
                 scale={0.7} position={[0, 1, 0]} rotation={[-Math.PI / 4, 0, 0]} />
-              <Common posZ={150} />
+              <Common light posZ={150} />
             </Suspense>
           </View>
         </div>
       </div>
 
-      <div className='mx-auto flex w-full flex-col flex-wrap items-center md:flex-row  lg:w-4/5'>
-        {/* jumbo */}
-        {/* <div className='flex w-full flex-col items-start justify-center p-12 text-center md:w-2/5 md:text-left'>
-          <p className='w-full uppercase'>Next + React Three Fiber</p>
-          <h1 className='my-4 text-5xl font-bold leading-tight'>Next 3D Starter</h1>
-          <p className='mb-8 text-2xl leading-normal'>A minimalist starter for React, React-three-fiber and Threejs.</p>
-        </div> */}
-
+      {/* <div className='mx-auto flex w-full flex-col flex-wrap items-center md:flex-row  lg:w-4/5'>
         <div className='w-full text-center md:w-3/5'>
           <View className='flex h-48 w-48 flex-col items-center justify-center'>
             <Suspense >
@@ -61,7 +55,7 @@ export default function Page() {
             </Suspense>
           </View>
         </div>
-      </div>
+      </div> */}
     </>
   )
 }
