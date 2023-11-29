@@ -35,7 +35,7 @@ export default function Page() {
               {/* <Cube /> */}
               <Spectrum route='/blob'
               />
-              <Common color='0x222222' position={[0, 6, 6]} />
+              <Common color='#000000' position={[0, 6, 6]} />
             </Suspense>
           </View>
         </div>
