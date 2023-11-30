@@ -8,8 +8,9 @@ import { shaderMaterial, Edges } from '@react-three/drei'
 import { useControls } from 'leva'
 import { Segments, Outlines } from '@react-three/drei'
 import { DoubleSide, Color } from 'three'
-import { LineSegmentsGeometry, EdgesGeometry } from 'three'
-
+import { LineSegments, EdgesGeometry } from 'three'
+import { LineMaterial } from 'three-stdlib'
+extend({ LineMaterial, LineSegments, EdgesGeometry })
 // const EdgeShaderGeometry = ({ mesh, angleThreshold, width = 1,
 //   uniforms, vertexShader, fragmentShader, }) => {
 //   const ref = useRef();
@@ -54,28 +55,6 @@ export const Spectrum = ({ halfLength = 1, ...props }) => {
   // const material = new ColorShiftMaterial({ color: new Color("hotpink") })
   // material.time = 1
 
-  const shaderColor = ((color) => {
-    if (typeof (color) === 'object') {
-      const colorInt = Object.values(color)
-      const colorFloat = colorInt.map((x) => x / 255.0)
-      console.log('shader:', colorFloat)
-      return colorFloat
-    }
-    return color
-  })
-
-  const levaColor = ((color) => {
-    console.log('leva:', color)
-    let colorDict = { r: 0, g: 0, b: 255 }
-    if (color.isColor) {
-      Object.keys(colorDict).forEach(key => {
-        colorDict[key] = Math.trunc(color[key] * 255)
-      })
-      console.log('leva:', colorDict)
-    }
-    return colorDict
-  })
-
   const uniforms = useMemo(
     () => ({
       u_time: { value: 0.0 },
@@ -93,44 +72,75 @@ export const Spectrum = ({ halfLength = 1, ...props }) => {
     }), []
   )
 
+  // Color gets converted from 255-int to 1.0-float in shader
+  const shaderColor = ((color) => {
+    if (typeof (color) === 'object') {
+      const colorInt = Object.values(color)
+      const colorFloat = colorInt.map((x) => x / 255.0)
+      return colorFloat
+    }
+    return color
+  })
+  // Leva controls output color as '#f00' or {r:,g:,b:,a:}
+  const levaColor = ((color) => {
+    console.log('leva in:', color)
+    let colorDict = { r: 0, g: 0, b: 255 }
+    if (color.r) {
+      Object.keys(colorDict).forEach(key => {
+        colorDict[key] = Math.trunc(color[key] * 255)
+      })
+      console.log('leva out:', colorDict)
+    }
+    return colorDict
+  })
+
   const { pause } = useControls({
     pause: false
   })
-  // Color gets converted from int to float in shader
-  const { wireframe, edges, edgeColor, edgeScale } = useControls({
-    wireframe: false, edges: true,
-    edgeColor: {
-      // value: '#f00' or {r:,g:,b:,a:}
-      value: levaColor(uniformsEdge.u_colorA.value),
+  const { wireframe, amplitude, meshScale, meshColor1, meshColor2 } = useControls({
+    wireframe: false,
+    amplitude: { value: 1.0, step: 0.1, min: 1.0, max: 10.0 },
+    meshScale: { value: 1.0, step: 0.1, min: 1.0, max: 10.0 },
+    meshColor1: {
+      value: levaColor(uniforms.u_colorA.value),
       onChange: (c) => {
-        console.log(c)
-        mesh.current.material.uniforms.u_colorA.value = shaderColor(c)
-        edge.current.material.uniforms.u_colorA.value = shaderColor(c)
+        console.log('meshColor2', c)
+        uniforms.u_colorA.value = shaderColor(c)
       },
     },
-    edgeScale: { value: 1.0, step: 0.1, min: 1.0, max: 2.0 },
+    meshColor2: {
+      value: levaColor(uniforms.u_colorB.value),
+      onChange: (c) => {
+        console.log('meshColor2', c)
+        uniforms.u_colorB.value = shaderColor(c)
+      },
+    },
   })
-  const { meshScale, amplitude } = useControls({
-    meshScale: { value: 1.0, step: 0.1, min: 1.0, max: 10.0 },
-    amplitude: { value: 1.0, step: 0.1, min: 1.0, max: 10.0 },
+  const { edges, edgeColor, edgeWidth } = useControls({
+    edges: true,
+    edgeColor: {
+      value: levaColor(uniformsEdge.u_colorA.value),
+      onChange: (c) => {
+        console.log('edgeColor', c)
+        uniformsEdge.u_colorA.value = shaderColor(c)
+      },
+    },
+    edgeWidth: { value: 1.0, step: 0.1, min: 1.0, max: 10.0 },
   })
 
   const vertexShader = `
     uniform float u_time;
     uniform float u_amplitude;
-
     varying float vZ;
-    // varying vec2 vUv;
 
     void main() {
       vec4 modelPosition = modelMatrix * vec4(position, 1.0);
 
       modelPosition.y += sin(modelPosition.x * 5.0 + u_time * 3.0) * 0.1;
       modelPosition.y += sin(modelPosition.z * 6.0 + u_time * 2.0) * 0.1;
-      modelPosition.y *= u_amplitude;
       
       vZ = modelPosition.y;
-      // vUv = uv;
+      modelPosition.y *= u_amplitude;
 
       vec4 viewPosition = viewMatrix * modelPosition;
       vec4 projectedPosition = projectionMatrix * viewPosition;
@@ -139,10 +149,10 @@ export const Spectrum = ({ halfLength = 1, ...props }) => {
     }
     `
   const fragmentShader = `
+    uniform float u_amplitude;
     uniform vec3 u_colorA;
     uniform vec3 u_colorB;
     varying float vZ;
-    // varying vec2 vUv
 
     void main() {
       vec3 color = mix(u_colorA, u_colorB, vZ * 2.0 + 0.5);
@@ -160,16 +170,17 @@ export const Spectrum = ({ halfLength = 1, ...props }) => {
     `
   const mesh = useRef(null)
   const edge = useRef(null)
+  const edgeMatl = useRef(null)
 
   useFrame((state, delta) => {
     if (!pause) {
       const t = state.clock.getElapsedTime()
-      mesh.current.material.uniforms.u_time.value = t
-      edge.current.material.uniforms.u_time.value = t
+      uniforms.u_time.value = t
+      uniformsEdge.u_time.value = t
     }
 
-    mesh.current.material.uniforms.u_amplitude.value = amplitude
-    edge.current.material.uniforms.u_amplitude.value = amplitude
+    uniforms.u_amplitude.value = amplitude
+    uniformsEdge.u_amplitude.value = amplitude
 
   })
 
@@ -182,20 +193,14 @@ export const Spectrum = ({ halfLength = 1, ...props }) => {
         vertexShader={vertexShader}
         fragmentShader={fragmentShader}
       />
-      {/* <EdgeShaderGeometry mesh={mesh} ref={edge}
-        scale={edgeScale} visible={edges}
-        uniforms={uniformsEdge}
-        vertexShader={vertexShader}
-        fragmentShader={fragmentShaderEdge}
-      /> */}
-      <Edges ref={edge} scale={edgeScale} visible={edges} >
-        <shaderMaterial side={DoubleSide}
+      <Edges ref={edge} visible={edges} lineWidth={edgeWidth}>
+        <shaderMaterial ref={edgeMatl} side={DoubleSide}
           uniforms={uniformsEdge}
           vertexShader={vertexShader}
           fragmentShader={fragmentShaderEdge}
         />
       </ Edges>
-      {/* <Outlines color={color} thickness={thickness} transparent={!outlines} opacity={0} /> */}
+      {/* <Outlines color={edgeColor} thickness={edgeWidth} visible={edges} /> */}
     </mesh>
   )
 }
