@@ -3,8 +3,8 @@
 import dynamic from 'next/dynamic'
 import { Suspense } from 'react'
 
-const Spectrum = dynamic(() => import('@/components/canvas/Examples').then((mod) => mod.Spectrum), { ssr: false })
-const Cube = dynamic(() => import('@/components/canvas/Examples').then((mod) => mod.Cube), { ssr: false })
+const Spectrum = dynamic(() => import('@/components/canvas/FFTShader').then((mod) => mod.Spectrum), { ssr: false })
+const Cube = dynamic(() => import('@/components/canvas/FFTShader').then((mod) => mod.Cube), { ssr: false })
 const Logo = dynamic(() => import('@/components/canvas/Logo').then((mod) => mod.Logo), { ssr: false })
 
 const View = dynamic(() => import('@/components/canvas/View').then((mod) => mod.View), {

@@ -1,59 +1,13 @@
 'use client'
 
-import { useGLTF } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useRef, useState, useMemo, useContext } from 'react'
-import { extend } from '@react-three/fiber'
 import { shaderMaterial, Edges } from '@react-three/drei'
 import { useControls } from 'leva'
 import { Segments, Outlines } from '@react-three/drei'
 import { DoubleSide, Color } from 'three'
-import { LineSegments, EdgesGeometry } from 'three'
-import { LineMaterial } from 'three-stdlib'
-extend({ LineMaterial, LineSegments, EdgesGeometry })
-// const EdgeShaderGeometry = ({ mesh, angleThreshold, width = 1,
-//   uniforms, vertexShader, fragmentShader, }) => {
-//   const ref = useRef();
-//   // const uniforms = useMemo(
-//   //   () => ({
-//   //     u_time: { value: 0.0 },
-//   //     u_colorA: { value: new Color('#1FB2C4') },
-//   //   }), []
-//   // )
-//   const edges = new EdgesGeometry(mesh.geometry, angleThreshold);
-//   const geometry = new LineSegmentsGeometry.fromEdgesGeometry(edges);
-//   const material = new shaderMaterial({
-//     side: DoubleSide,
-//     uniforms,
-//     vertexShader,
-//     fragmentShader,
-//   });
-
-//   return (
-//     <mesh ref={ref} geometry={geometry} material={material} />
-//   );
-// };
 
 export const Spectrum = ({ halfLength = 1, ...props }) => {
-
-  const ColorShiftMaterial = shaderMaterial(
-    { time: 0, color: new Color(0.2, 0.0, 0.1) },
-    `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }`,
-    `
-      uniform float time;
-      uniform vec3 color;
-      varying vec2 vUv;
-      void main() {
-        gl_FragColor.rgba = vec4(0.5 + 0.3 * sin(vUv.yxx + time) + color, 1.0);
-      }
-    `)
-  // const material = new ColorShiftMaterial({ color: new Color("hotpink") })
-  // material.time = 1
 
   const uniforms = useMemo(
     () => ({
@@ -85,7 +39,7 @@ export const Spectrum = ({ halfLength = 1, ...props }) => {
   const levaColor = ((color) => {
     console.log('leva in:', color)
     let colorDict = { r: 0, g: 0, b: 255 }
-    if (color.r) {
+    if (color.isColor) {
       Object.keys(colorDict).forEach(key => {
         colorDict[key] = Math.trunc(color[key] * 255)
       })
